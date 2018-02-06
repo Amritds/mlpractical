@@ -22,7 +22,7 @@ Weight decay of 0.002 was applied to all weights, but not biases, and the learni
 
 class Baseline_VGGClassifier:
     def __init__(self, batch_size, layer_stage_sizes=[64, 128, 256], name, num_classes=100, num_channels=3, batch_norm_use=False,
-                 inner_layer_depth=1, strided_dim_reduction=False, dropout_rates=[0.1, 0.25, 0.25, 0.5, 0.5, 0.5], pool_size=(3,3), kernel_size=[5,5], num_fully_conn_layers=2, FC_layer_stage_sizes=[25, 25]):
+                 inner_layer_depth=1, strided_dim_reduction=False, dropout_rates=[0.1, 0.25, 0.25, 0.5, 0.5, 0.5], pool_size=(3,3), kernel_size=[5,5], num_fully_conn_layers=2):
 
         """
         Initializes a VGG Classifier architecture
@@ -65,51 +65,56 @@ class Baseline_VGGClassifier:
         ###:param dropout_rates: A tf placeholder of type tf.float32 indicating the amount of dropout applied
         :return: Embeddings of size [batch_size, self.num_classes]
         """
-        d = 0 # index of the self.dropout_rates array
+        
+	#==============================================================BASELINE NETWORK=======================================================================================
+	d = 0 # index of the self.dropout_rates array
         with tf.variable_scope(self.name, reuse=self.reuse):
             layer_features = []
             with tf.variable_scope('VGGNet'):
+
+		#Dropout on inputs------------------------------------------------------------------------
                 outputs = image_input
                 outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
                 d += 1
-                for i in range(len(self.layer_stage_sizes)):
+		
+		#Convolutional layers --------------------------------------------------------------------------------
+
+                for i in range(len(self.layer_stage_sizes)): #Only consider stages that are convolutional layers.
                     with tf.variable_scope('conv_stage_{}'.format(i)):
                             for j in range(self.inner_layer_depth):
                                 with tf.variable_scope('conv_{}_{}'.format(i, j)):
-                                    if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
-                                        stride = 2
-                                    else:
-                                        stride = 1
-
+				    #Convolutional Layer, ReLu activation, Dropout----------------------------------------------------------------
+				    stride = 1
                                     outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], self.kernel_size,
-                                                               strides=(stride, stride),
+                                                               strides=(stride,stride),
                                                                padding='SAME', activation=None)
                                     outputs = relu(outputs, name="relu{}".format(i))
                                     layer_features.append(outputs)
-                                    if self.batch_norm_use:
-                                        outputs = batch_norm(outputs, decay=0.99, scale=True,
-                                                             center=True, is_training=training, renorm=False)
                                     outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
                                     d += 1
 
-                            if self.strided_dim_reduction==False:
+				#Max Pooling --------------------------------------------------------------------------------
                                 outputs = tf.layers.max_pooling2d(outputs, self.pool_size, strides=2)
-                            
-                        
-            outputs = tf.contrib.layers.flatten(outputs)
-            for i in range(len(self.num_fully_conn_layers)):
-                outputs = tf.layers.dense(outputs, units=self.FC_layer_stage_sizes[i])
-                outputs = relu(outputs, name="relu{}".format(i))
-                layer_features.append(outputs)
-                if self.batch_norm_use:
-                    outputs = batch_norm(outputs, decay=0.99, scale=True,
-                                         center=True, is_training=training, renorm=False)
-                outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
-                d += 1
-                        
-                                                                              
+                #-----------------------------------------------------------------------------------------------------------------------------------             
+            
+	    #Flatten output from convolutional layers
+            outputs = tf.contrib.layers.flatten(c_conv_encoder)
+	    #Fully connected layer 1 ------------------------------------------------------------------------------------------------------------            
+            outputs = tf.layers.dense(outputs, units=tf.size(outputs)) #Note using no.Outputs = no.Inputs makes this layer less constraining.(Hopefully)  
+            outputs = relu(outputs, name="relu{}".format(0+len(self.layer_stage_sizes)))
+            layer_features.append(outputs)
+            outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
+            d += 1
+	    #Fully connected layer 2 ------------------------------------------------------------------------------------------------------------            
+            outputs = tf.layers.dense(outputs, units=self.num_classes) #Note no.Outputs = no.Classes to be predicted.
+            outputs = relu(outputs, name="relu{}".format(1+len(self.layer_stage_sizes)))
+            layer_features.append(outputs)
+            outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
+            d += 1          
+	    #Softmax layer
+	    outputs = tf.nn.softmax(outputs,name="softmax{}".format(1))
+            #=================================================================================================================================================================                            
             c_conv_encoder = outputs
-            c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
