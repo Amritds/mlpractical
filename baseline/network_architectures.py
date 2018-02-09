@@ -76,6 +76,7 @@ class Baseline_VGGClassifier:
                 outputs = image_input
                 outputs = tf.layers.dropout(outputs, rate=self.dropout_rates[d], training=training)
                 d += 1
+
 		
 		#Convolutional layers --------------------------------------------------------------------------------
 
