@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm
 from tensorflow.python.ops.nn_ops import leaky_relu, relu
+from tf.contrib.layers import maxout
 
 from utils.network_summary import count_parameters
 
