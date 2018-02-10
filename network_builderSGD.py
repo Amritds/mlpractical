@@ -162,13 +162,14 @@ class ClassifierNetworkGraph:
         batch_images = tf.cond(self.augment_rotate, lambda: self.rotate_batch(batch_images), lambda: batch_images)
         return batch_images
 
-    def train(self, losses, learning_rate=0.5, beta1=0.9):
+    def train(self, losses, learning_rate=0.005, beta1=0.9):
         """
         Args:
             losses dict.
         Returns:
             train op.
         """
+        print(learning_rate, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         c_opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)  # Needed for correct batch norm usage
         with tf.control_dependencies(update_ops):
