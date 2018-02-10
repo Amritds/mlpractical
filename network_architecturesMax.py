@@ -161,7 +161,7 @@ class VGGClassifier:
                                 outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
                                                            strides=(stride, stride),
                                                            padding='SAME', activation=None)
-                                outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
+                                outputs = maxout(outputs, num_units=32, name="maxout{}".format(i))
                                 layer_features.append(outputs)
                                 if self.batch_norm_use:
                                     outputs = batch_norm(outputs, decay=0.99, scale=True,
