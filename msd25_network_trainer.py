@@ -23,7 +23,7 @@ experiment_name = "experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_pr
 
 rng = np.random.RandomState(seed=seed)  # set seed
 
-train_data = MSD10GenreDataProvider(which_set="train", batch_size=batch_size, rng=rng)
+train_data = MSD10GenreDataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
 val_data = MSD10GenreDataProvider(which_set="valid", batch_size=batch_size, rng=rng)
 test_data = MSD10GenreDataProvider(which_set="test", batch_size=batch_size, rng=rng)
 #  setup our data providers
@@ -83,7 +83,7 @@ with tf.Session() as sess:
                                                    continue_from_epoch))  # restore previous graph to continue operations
 
     best_val_accuracy = 0.
-    with tqdm.tqdm(total=epochs) as epoch_pbar:
+    with tqdm.tqdm(total=epochs - start_epoch) as epoch_pbar:
         for e in range(start_epoch, epochs):
             total_c_loss = 0.
             total_accuracy = 0.
