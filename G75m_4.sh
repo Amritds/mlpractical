@@ -30,4 +30,4 @@ export TMP=/disk/scratch/${STUDENT_ID}/
 
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 
-python adam_max.py --batch_size 128 --epochs 100 --experiment_prefix base1MaxoutAdam --dropout_rate 0.4 --batch_norm_use True --strided_dim_reduction False --seed 25012018 --classifier_type Baseline_classifier
+python sgd_max.py --batch_size 128 --epochs 100 --experiment_prefix base1MaxoutSGD --dropout_rate 0.4 --batch_norm_use True --strided_dim_reduction False --seed 25012018 --classifier_type Baseline_classifier
