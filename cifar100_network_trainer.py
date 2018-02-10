@@ -12,18 +12,18 @@ parser = argparse.ArgumentParser(description='Welcome to CNN experiments script'
 parser_extractor = ParserClass(parser=parser)  # creates a parser class to process the parsed input
 
 batch_size, seed, epochs, logs_path, continue_from_epoch, tensorboard_enable, batch_norm, \
-strided_dim_reduction, experiment_prefix, dropout_rate_value = parser_extractor.get_argument_variables()
+strided_dim_reduction, experiment_prefix, dropout_rate_value, classifier_type = parser_extractor.get_argument_variables()
 # returns a list of objects that contain
 # our parsed input
 
-experiment_name = "experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_prefix,
+experiment_name = "Experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_prefix,
                                                                    batch_size, batch_norm,
                                                                    strided_dim_reduction)
 #  generate experiment name
 
 rng = np.random.RandomState(seed=seed)  # set seed
 
-train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng)
+train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
 val_data = CIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng)
 test_data = CIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng)
 #  setup our data providers
@@ -47,7 +47,7 @@ classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placehol
                                             num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
                                             strided_dim_reduction=strided_dim_reduction,
-                                            use_batch_normalization=batch_norm)  # initialize our computational graph
+                                            use_batch_normalization=batch_norm, network_name=classifier_type)  # initialize our computational graph
 
 if continue_from_epoch == -1:  # if this is a new experiment and not continuation of a previous one then generate a new
     # statistics file
@@ -83,7 +83,7 @@ with tf.Session() as sess:
                                                    continue_from_epoch))  # restore previous graph to continue operations
 
     best_val_accuracy = 0.
-    with tqdm.tqdm(total=epochs) as epoch_pbar:
+    with tqdm.tqdm(total=epochs - start_epoch) as epoch_pbar:
         for e in range(start_epoch, epochs):
             total_c_loss = 0.
             total_accuracy = 0.

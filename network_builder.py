@@ -1,13 +1,13 @@
 import tensorflow as tf
 
-from network_architectures import VGGClassifier, FCCLayerClassifier
+from network_architectures import VGGClassifier, FCCLayerClassifier, BaselineClassifier
 
 
 class ClassifierNetworkGraph:
     def __init__(self, input_x, target_placeholder, dropout_rate,
                  batch_size=100, num_channels=1, n_classes=100, is_training=True, augment_rotate_flag=True,
                  tensorboard_use=False, use_batch_normalization=False, strided_dim_reduction=True,
-                 network_name='VGG_classifier'):
+                 network_name='Baseline_classifier'):
 
         """
         Initializes a Classifier Network Graph that can build models, train, compute losses and save summary statistics
@@ -28,7 +28,12 @@ class ClassifierNetworkGraph:
         :param strided_dim_reduction: Whether to use strided dim reduction instead of max pooling
         """
         self.batch_size = batch_size
-        if network_name == "VGG_classifier":
+        if network_name == "Baseline_classifier":
+            self.c = BaselineClassifier(self.batch_size, name="classifier_neural_network",
+                                   batch_norm_use=use_batch_normalization, num_channels=num_channels,
+                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
+                                   strided_dim_reduction=strided_dim_reduction)
+        elif network_name == "VGG_classifier":
             self.c = VGGClassifier(self.batch_size, name="classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
                                    num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
@@ -94,6 +99,9 @@ class ClassifierNetworkGraph:
         """
         for i in range(len(features)):
             shape_in = features[i].get_shape().as_list()
+            print()
+            print(shape_in)
+            print
             channels = shape_in[3]
             y_channels = num_rows_in_grid
             x_channels = int(channels / y_channels)
