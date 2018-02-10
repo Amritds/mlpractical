@@ -65,7 +65,7 @@ class BaselineClassifier:
                                 outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [5, 5],
                                                            strides=(stride, stride),
                                                            padding='SAME', activation=None)
-                                outputs = relu(outputs, name="relu{}".format(i))
+                                outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
                                 layer_features.append(outputs)
                                 if self.batch_norm_use:
                                     outputs = batch_norm(outputs, decay=0.99, scale=True,
@@ -82,7 +82,7 @@ class BaselineClassifier:
                         d += 1
 
                         outputs = tf.layers.dense(outputs, units=temp[k])
-                        outputs = relu(outputs, name="relu_fcl_{}".format(k))
+                        outputs = leaky_relu(outputs, name="leaky_relu_fcl_{}".format(k))
                         layer_features.append(outputs)
                         if self.batch_norm_use:
                             outputs = batch_norm(outputs, decay=0.99, scale=True,
