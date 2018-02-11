@@ -1,0 +1,32 @@
+/home/s1453274/miniconda3/envs/mlp/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: compiletime version 3.5 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.6
+  return f(*args, **kwds)
+/home/s1453274/miniconda3/envs/mlp/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: compiletime version 3.5 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.6
+  return f(*args, **kwds)
+/home/s1453274/miniconda3/envs/mlp/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: compiletime version 3.5 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.6
+  return f(*args, **kwds)
+Traceback (most recent call last):
+  File "adam_max.py", line 26, in <module>
+    train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
+  File "/mnt/mscteach_home/s1453274/mlpractical_G75/data_providers.py", line 396, in __init__
+    'Data file does not exist at expected path: ' + data_path
+AssertionError: Data file does not exist at expected path: /home/s1453274/mlpractical/data/cifar100-train.npz
+Traceback (most recent call last):
+  File "sgd_leaky.py", line 26, in <module>
+    train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
+  File "/mnt/mscteach_home/s1453274/mlpractical_G75/data_providers.py", line 396, in __init__
+    'Data file does not exist at expected path: ' + data_path
+AssertionError: Data file does not exist at expected path: /home/s1453274/mlpractical/data/cifar100-train.npz
+Traceback (most recent call last):
+  File "adam_leaky.py", line 26, in <module>
+    train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
+  File "/mnt/mscteach_home/s1453274/mlpractical_G75/data_providers.py", line 396, in __init__
+    'Data file does not exist at expected path: ' + data_path
+AssertionError: Data file does not exist at expected path: /home/s1453274/mlpractical/data/cifar100-train.npz
+/home/s1453274/miniconda3/envs/mlp/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: compiletime version 3.5 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.6
+  return f(*args, **kwds)
+Traceback (most recent call last):
+  File "sgd_max.py", line 26, in <module>
+    train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
+  File "/mnt/mscteach_home/s1453274/mlpractical_G75/data_providers.py", line 396, in __init__
+    'Data file does not exist at expected path: ' + data_path
+AssertionError: Data file does not exist at expected path: /home/s1453274/mlpractical/data/cifar100-train.npz
