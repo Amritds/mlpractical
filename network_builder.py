@@ -164,8 +164,7 @@ class ClassifierNetworkGraph:
         batch_images = tf.cond(self.augment_rotate, lambda: self.rotate_batch(batch_images), lambda: batch_images)
         return batch_images
 
-    def 
-    (self, losses, learning_rate=1e-3, beta1=0.9):
+    def train(self, losses, learning_rate=1e-3, beta1=0.9):
         """
         Args:
             losses dict.
