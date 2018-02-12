@@ -5,7 +5,7 @@
 #SBATCH --mem=16000  # memory in Mb
 #SBATCH -o outfile1_nb  # send stdout to sample_experiment_outfile
 #SBATCH -e errfile1_nb  # send stderr to sample_experiment_errfile
-#SBATCH -t 8:00:00  # time requested in hour:minute:secon
+#SBATCH -t 7:00:00  # time requested in hour:minute:secon
 export CUDA_HOME=/opt/cuda-8.0.44
 
 export CUDNN_HOME=/opt/cuDNN-6.0_8.0
