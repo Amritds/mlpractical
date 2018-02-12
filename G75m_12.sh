@@ -29,5 +29,6 @@ export TMP=/disk/scratch/${STUDENT_ID}/
 # Activate the relevant virtual environment:
 
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
+export MLP_DATA_DIR="/afs/inf.ed.ac.uk/group/teaching/mlp/data/2017-18/"
 
 python sgd_leaky.py --batch_size 128 --epochs 100 --experiment_prefix vgg1LeakyReluSGD --dropout_rate 0.4 --batch_norm_use True --strided_dim_reduction False --seed 25012018 --classifier_type VGG_classifier
