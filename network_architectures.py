@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm
-from tensorflow.python.ops.nn_ops import leaky_relu, relu
+from tensorflow.python.ops.nn_ops import leaky_relu, relu, elu
 
 from utils.network_summary import count_parameters
 
@@ -149,30 +149,29 @@ class VGGClassifier:
             layer_features = []
             with tf.variable_scope('VGGNet'):
                 outputs = image_input
-                for i in range(len(self.layer_stage_sizes)):
-                    with tf.variable_scope('conv_stage_{}'.format(i)):
-                        for j in range(self.inner_layer_depth):
-                            with tf.variable_scope('conv_{}_{}'.format(i, j)):
-                                if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
-                                    stride = 2
-                                else:
-                                    stride = 1
-                                outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
+                
+                stack = np.array([[[192,5]],[[192,1],[240,3]],[[240,1],[260,2]],[[260,1],[280,2]],[[280,1],[300,2]],[[300,1]],[[100,1]]])
+                dropout_rates = [0,0.1,0.2,0.3,0.4,0.5,0]
+                i = 0
+                for stage in stack:
+                    j =0 
+                    for layer in stage:
+                        
+                        stride = 1
+                        kernelShape = layer[1] 
+                        outputs = tf.layers.conv2d(outputs, layer[0], [kernelShape,kernelShape],
                                                            strides=(stride, stride),
                                                            padding='SAME', activation=None)
-                                outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
-                                layer_features.append(outputs)
-                                if self.batch_norm_use:
-                                    outputs = batch_norm(outputs, decay=0.99, scale=True,
+                        outputs = elu(outputs, name="elu{}".format(i))
+                        layer_features.append(outputs)
+                        if self.batch_norm_use:
+                            outputs = batch_norm(outputs, decay=0.99, scale=True,
                                                          center=True, is_training=training, renorm=False)
-                        if self.strided_dim_reduction==False:
-                            outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
-
-                        outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
-                                                                              # apply dropout only at dimensionality
-                                                                              # reducing steps, i.e. the last layer in
-                                                                              # every group
-
+                        j = j+1
+                    outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
+                    outputs = tf.layers.dropout(outputs, rate=dropout_rates[i], training=training)
+                    i =i+1
+                    
             c_conv_encoder = outputs
             c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
             c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
