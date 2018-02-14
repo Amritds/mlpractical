@@ -178,7 +178,10 @@ class VGGClassifier:
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
+
+        self.regularizer = tf.contrib.layers.l2_regularizer(scale=0.0)
         self.reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=self.name)
+	tf.get_
 
         if not self.build_completed:
             self.build_completed = True

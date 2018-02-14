@@ -69,12 +69,12 @@ class ClassifierNetworkGraph:
             preds, layer_features = self.c(image_input=image_inputs, training=self.training_phase,
                                            dropout_rate=self.dropout_rate)
             # add l2 regularization
-            regularizer = 0.0005*sum(self.reg_losses)
+            reg_term = tf.contrib.layers.apply_regularization(self.c.regularizer, self.c.reg_losses)
             # compute loss and accuracy
             correct_prediction = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs, tf.int64))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             crossentropy_loss = tf.reduce_mean(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs, logits=preds))+ regularizer
+                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs, logits=preds))+ reg_term
 
             # add loss and accuracy to collections
             tf.add_to_collection('crossentropy_losses', crossentropy_loss)
