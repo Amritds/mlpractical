@@ -178,6 +178,7 @@ class VGGClassifier:
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
+	self.reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
         if not self.build_completed:
             self.build_completed = True
