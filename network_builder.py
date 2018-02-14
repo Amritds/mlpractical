@@ -69,7 +69,7 @@ class ClassifierNetworkGraph:
             preds, layer_features = self.c(image_input=image_inputs, training=self.training_phase,
                                            dropout_rate=self.dropout_rate)
             # add l2 regularization
-            regularizer = tf.nn.l2_loss(tf.GraphKeys.TRAINABLE_VARIABLES)
+            regularizer = tf.nn.l2_loss(self.c.variables)
             # compute loss and accuracy
             correct_prediction = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs, tf.int64))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
