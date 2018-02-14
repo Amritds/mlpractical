@@ -70,6 +70,7 @@ class ClassifierNetworkGraph:
                                            dropout_rate=self.dropout_rate)
             # add l2 regularization
             reg_term = tf.contrib.layers.apply_regularization(self.c.regularizer, self.c.reg_losses)
+
             # compute loss and accuracy
             correct_prediction = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs, tf.int64))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))

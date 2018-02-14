@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm
 from tensorflow.python.ops.nn_ops import leaky_relu, relu, elu
+import numpy as np
 
 from utils.network_summary import count_parameters
 
@@ -182,6 +183,7 @@ class VGGClassifier:
         self.regularizer = tf.contrib.layers.l2_regularizer(scale=0.0)
         self.reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=self.name)
 	tf.get_
+
 
         if not self.build_completed:
             self.build_completed = True
