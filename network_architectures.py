@@ -149,6 +149,7 @@ class VGGClassifier:
         with tf.variable_scope(self.name, reuse=self.reuse):
             layer_features = []
             with tf.variable_scope('VGGNet'):
+                self.regularizer = tf.contrib.layers.l2_regularizer(scale=0.0)
                 outputs = image_input
                 
                 stack = np.array([[[192,5]],[[192,1],[240,3]],[[240,1],[260,2]],[[260,1],[280,2]],[[280,1],[300,2]],[[300,1]],[[100,1]]])
@@ -162,7 +163,7 @@ class VGGClassifier:
                         kernelShape = layer[1] 
                         outputs = tf.layers.conv2d(outputs, layer[0], [kernelShape,kernelShape],
                                                            strides=(stride, stride),
-                                                           padding='SAME', activation=None)
+                                                           padding='SAME', activation=None,kernel_regularizer=self.regularizer)
                         outputs = elu(outputs, name="elu{}".format(i))
                         layer_features.append(outputs)
                         if self.batch_norm_use:
@@ -175,15 +176,10 @@ class VGGClassifier:
                     
             c_conv_encoder = outputs
             c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
-            c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
+            c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes,kernel_regularizer=self.regularizer)
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
-
-        self.regularizer = tf.contrib.layers.l2_regularizer(scale=0.0)
-        self.reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=self.name)
-	tf.get_
-
 
         if not self.build_completed:
             self.build_completed = True
