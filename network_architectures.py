@@ -168,7 +168,7 @@ class VGGClassifier:
                             outputs = batch_norm(outputs, decay=0.99, scale=True,
                                                          center=True, is_training=training, renorm=False)
                         j = j+1
-                    outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
+                    outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2, padding='same')
                     outputs = tf.layers.dropout(outputs, rate=dropout_rates[i], training=training)
                     i =i+1
                     
