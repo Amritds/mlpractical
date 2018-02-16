@@ -94,7 +94,8 @@ with tf.Session() as sess:
             with tqdm.tqdm(total=total_train_batches) as pbar_train:
                 batch_idx =0 
                 for (x_batch, y_batch) in train_data.datagen.flow(train_data.inputs,train_data.targets,train_data._batch_size):
-                    y_batch = train_data.to_one_of_k(y_batch)
+                    if train.one_hot:
+                        y_batch = train_data.to_one_of_k(y_batch)
                     batch_idx += 1
 
                     iter_id = e * total_train_batches + batch_idx
@@ -135,7 +136,8 @@ with tf.Session() as sess:
             with tqdm.tqdm(total=total_val_batches) as pbar_val:
                 batch_idx =0 
                 for (x_batch, y_batch) in val_data.datagen.flow(val_data.inputs,val_data.targets,val_data._batch_size):
-                    y_batch = val_data.to_one_of_k(y_batch)
+                    if val.one_hot:
+                        y_batch = val_data.to_one_of_k(y_batch)
                     batch_idx += 1
                     c_loss_value, acc = sess.run(
                         [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
@@ -173,7 +175,8 @@ with tf.Session() as sess:
         with tqdm.tqdm(total=total_test_batches) as pbar_test:
             batch_idx =0 
             for (x_batch, y_batch) in test_data.datagen.flow(test_data.inputs,test_data.targets,test_data._batch_size):
-                y_batch = test_data.to_one_of_k(y_batch)
+                if test.one_hot:
+                    y_batch = test_data.to_one_of_k(y_batch)
                 batch_idx += 1
                 c_loss_value, acc = sess.run(
                     [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
