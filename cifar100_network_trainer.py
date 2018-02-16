@@ -180,6 +180,7 @@ with tf.Session() as sess:
                 if test_data.one_hot:
                     y_batch = test_data.to_one_of_k(y_batch)
                 batch_idx += 1
+                c_loss_value, acc = sess.run(
                     [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
                     feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
                                data_targets: y_batch, training_phase: False, rotate_data: False})
