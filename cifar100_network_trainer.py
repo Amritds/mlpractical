@@ -2,7 +2,8 @@ import argparse
 import numpy as np
 import tensorflow as tf
 import tqdm
-from data_providers import CIFAR100DataProvider
+import sys
+from data_providers import PreprocessedCIFAR100DataProvider
 from network_builder import ClassifierNetworkGraph
 from utils.parser_utils import ParserClass
 from utils.storage import build_experiment_folder, save_statistics
@@ -23,9 +24,14 @@ experiment_name = "Experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_pr
 
 rng = np.random.RandomState(seed=seed)  # set seed
 
-train_data = CIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
-val_data = CIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng)
-test_data = CIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng)
+train_data = PreprocessedCIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
+print(train_data.shape)
+sys.exit(0)
+val_data = PreprocessedCIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng)
+test_data = PreprocessedCIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng)
+
+
+
 #  setup our data providers
 
 print("Running {}".format(experiment_name))
@@ -88,7 +94,11 @@ with tf.Session() as sess:
             total_c_loss = 0.
             total_accuracy = 0.
             with tqdm.tqdm(total=total_train_batches) as pbar_train:
-                for batch_idx, (x_batch, y_batch) in enumerate(train_data):
+                batch_idx =0 
+                for (x_batch, y_batch) in train_data.datagen.flow(train_data.inputs,train_data.targets,train_data._batch_size):
+                    y_batch = train_data.to_one_of_k(y_batch)
+                    batch_idx += 1
+
                     iter_id = e * total_train_batches + batch_idx
                     _, c_loss_value, acc = sess.run(
                         [c_error_opt_op, losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
@@ -125,7 +135,10 @@ with tf.Session() as sess:
             # and that we do not run the c_error_opt_op which runs gradient descent, but instead only call the loss ops
             #  to collect losses on the validation set
             with tqdm.tqdm(total=total_val_batches) as pbar_val:
-                for batch_idx, (x_batch, y_batch) in enumerate(val_data):
+                batch_idx =0 
+                for (x_batch, y_batch) in val_data.datagen.flow(val_data.inputs,val_data.targets,val_data._batch_size):
+                    y_batch = val_data.to_one_of_k(y_batch)
+                    batch_idx += 1
                     c_loss_value, acc = sess.run(
                         [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
                         feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
@@ -160,7 +173,10 @@ with tf.Session() as sess:
         total_test_accuracy = 0.
         # computer test loss and accuracy and save
         with tqdm.tqdm(total=total_test_batches) as pbar_test:
-            for batch_id, (x_batch, y_batch) in enumerate(test_data):
+            batch_idx =0 
+            for (x_batch, y_batch) in test_data.datagen.flow(test_data.inputs,test_data.targets,test_data._batch_size):
+                y_batch = test_data.to_one_of_k(y_batch)
+                batch_idx += 1
                 c_loss_value, acc = sess.run(
                     [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
                     feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
