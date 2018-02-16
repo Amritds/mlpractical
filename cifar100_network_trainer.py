@@ -25,8 +25,6 @@ experiment_name = "Experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_pr
 rng = np.random.RandomState(seed=seed)  # set seed
 
 train_data = PreprocessedCIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
-print(train_data.shape)
-sys.exit(0)
 val_data = PreprocessedCIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng)
 test_data = PreprocessedCIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng)
 
