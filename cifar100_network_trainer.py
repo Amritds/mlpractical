@@ -25,8 +25,8 @@ experiment_name = "Experiment_{}_batch_size_{}_bn_{}_mp_{}".format(experiment_pr
 rng = np.random.RandomState(seed=seed)  # set seed
 
 train_data = PreprocessedCIFAR100DataProvider(which_set="train", batch_size=batch_size, rng=rng, random_sampling=True)
-val_data = PreprocessedCIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng)
-test_data = PreprocessedCIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng)
+val_data = PreprocessedCIFAR100DataProvider(which_set="valid", batch_size=batch_size, rng=rng, datagen=train_data.datagen)
+test_data = PreprocessedCIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rng, datagen=train_data.datagen)
 
 
 
@@ -94,10 +94,10 @@ with tf.Session() as sess:
             with tqdm.tqdm(total=total_train_batches) as pbar_train:
                 batch_idx =0 
                 for (x_batch, y_batch) in train_data.datagen.flow(train_data.inputs,train_data.targets,train_data._batch_size):
+                    if(len(x_batch<128))break;
                     if train_data.one_hot:
                         y_batch = train_data.to_one_of_k(y_batch)
                     batch_idx += 1
-
                     iter_id = e * total_train_batches + batch_idx
                     _, c_loss_value, acc = sess.run(
                         [c_error_opt_op, losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
@@ -136,6 +136,7 @@ with tf.Session() as sess:
             with tqdm.tqdm(total=total_val_batches) as pbar_val:
                 batch_idx =0 
                 for (x_batch, y_batch) in val_data.datagen.flow(val_data.inputs,val_data.targets,val_data._batch_size):
+                    if(len(x_batch<128))break;
                     if val_data.one_hot:
                         y_batch = val_data.to_one_of_k(y_batch)
                     batch_idx += 1
@@ -175,10 +176,10 @@ with tf.Session() as sess:
         with tqdm.tqdm(total=total_test_batches) as pbar_test:
             batch_idx =0 
             for (x_batch, y_batch) in test_data.datagen.flow(test_data.inputs,test_data.targets,test_data._batch_size):
+                if(len(x_batch<128))break;
                 if test_data.one_hot:
                     y_batch = test_data.to_one_of_k(y_batch)
                 batch_idx += 1
-                c_loss_value, acc = sess.run(
                     [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
                     feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
                                data_targets: y_batch, training_phase: False, rotate_data: False})

@@ -744,7 +744,7 @@ class PreprocessedCIFAR100DataProvider(DataProvider):
     """Data provider for CIFAR-100 object images."""
 
     def __init__(self, which_set='train', batch_size=100, max_num_batches=-1,
-                 random_sampling=True, rng=None, flatten=False, one_hot=False):
+                 random_sampling=True, rng=None, datagen=None, flatten=False, one_hot=False):
         """Create a new EMNIST data provider object.
 
         Args:
@@ -788,12 +788,16 @@ class PreprocessedCIFAR100DataProvider(DataProvider):
         inputs = inputs / 255.0
 
         #Preprocessing
-        self.datagen = tf.keras.preprocessing.image.ImageDataGenerator(featurewise_center=True, featurewise_std_normalization=True, zca_whitening=True)
-        self.datagen.fit(inputs)
+        if(datagen==None):
+            self.datagen = tf.keras.preprocessing.image.ImageDataGenerator(featurewise_center=True, featurewise_std_normalization=True, zca_whitening=True)
+            self.datagen.fit(inputs)
+        else:
+            self.datagen =datagen
+        
         # pass the loaded data to the parent class __init__
         super(PreprocessedCIFAR100DataProvider, self).__init__(
             inputs, targets, batch_size, max_num_batches, random_sampling, rng)
-
+        
     def next(self):
         """Returns next data batch or raises `StopIteration` if at end."""
         inputs_batch, targets_batch = super(PreprocessedCIFAR100DataProvider, self).next()
