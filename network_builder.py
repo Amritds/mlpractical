@@ -88,7 +88,7 @@ class ClassifierNetworkGraph:
             true_outputs1 = self.targets1
             
             # produce predictions and get layer features to save for visual inspection
-            preds1, layer_features1 = self.auxillaryNetwork1(image_input=image_inputs, training=self.training_phase,
+            preds1, layer_features1 = self.auxNetwork1(image_input=image_inputs, training=self.training_phase,
                                            dropout_rate=self.dropout_rate)
             
             
