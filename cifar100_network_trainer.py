@@ -38,21 +38,21 @@ test_data = CIFAR100DataProvider(which_set="test", batch_size=batch_size, rng=rn
 data_inputs = tf.placeholder(tf.float32, [batch_size, train_data.inputs.shape[1], train_data.inputs.shape[2],
                                           train_data.inputs.shape[3]], 'data-inputs')
 
-#!!!!!!!!!!! DEFINE CLASSIFICATION TASKS HERE. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!========================================================
+# Define classification task placeholders ============================================================================
 #Multi task--------------------------------------------------------------------------
 
 #Main Task
 data_targets = tf.placeholder(tf.int32, [batch_size], 'data-targets')
 
 #Aux Task1
-data_targets1 = tf.placeholder(tf.int32, [batch_size], 'data-targets')
+data_targets1 = tf.placeholder(tf.int32, [batch_size], 'data-targets1')
 #------------------------------------------------------------------------------------
 
 training_phase = tf.placeholder(tf.bool, name='training-flag')
 rotate_data = tf.placeholder(tf.bool, name='rotate-flag')
 dropout_rate = tf.placeholder(tf.float32, name='dropout-prob')
 
-classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets1, target_placeholder1=data_targets1,
+classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets, target_placeholder1=data_targets1,
                                             dropout_rate=dropout_rate, batch_size=batch_size,
                                             num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
@@ -128,7 +128,7 @@ with tf.Session() as sess:
             _, c_loss_value1, acc1 = sess.run(
             [c_error_opt_op1, losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets: y_batch, training_phase: True, rotate_data: False})
+            data_targets1: y_batch, training_phase: True, rotate_data: False})
                     
             total_c_loss1 += c_loss_value1  # add loss of current iter to sum
             total_accuracy1 += acc1 # add acc of current iter to sum
@@ -174,11 +174,11 @@ with tf.Session() as sess:
             total_val_c_loss += c_loss_value
             total_val_accuracy += acc
             
-            #Aux Task1
+            #Aux Task1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! replace y batch with target values.
             c_loss_value1, acc1 = sess.run(
             [losses_ops["crossentropy_losses2"], losses_ops["accuracy2"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets: y_batch, training_phase: False, rotate_data: False})
+            data_targets1: y_batch, training_phase: False, rotate_data: False})
         
             total_val_c_loss1 += c_loss_value1
             total_val_accuracy1 += acc1
