@@ -188,11 +188,11 @@ with tf.Session() as sess:
         
         #Main Task
         total_val_c_loss /= total_val_batches
-        Total_val_accuracy /= total_val_batches
+        total_val_accuracy /= total_val_batches
         
         #Task2
         total_val_c_loss1 /= total_val_batches
-        Total_val_accuracy1 /= total_val_batches
+        total_val_accuracy1 /= total_val_batches
         #----------------------------------------------
         
         #Only concerns Main Task
