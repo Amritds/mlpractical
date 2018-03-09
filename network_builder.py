@@ -1,13 +1,13 @@
 import tensorflow as tf
 
-from network_architectures import VGGClassifier, FCCLayerClassifier, BaselineClassifier
+from network_architectures import VGGClassifier
 
 
 class ClassifierNetworkGraph:
-    def __init__(self, input_x, target_placeholder, dropout_rate,
+    def __init__(self, input_x, target_placeholder, targetplaceholder1, dropout_rate,
                  batch_size=100, num_channels=1, n_classes=100, is_training=True, augment_rotate_flag=True,
                  tensorboard_use=False, use_batch_normalization=False, strided_dim_reduction=True,
-                 network_name='Baseline_classifier'):
+                 network_name='VGG_classifier'):
 
         """
         Initializes a Classifier Network Graph that can build models, train, compute losses and save summary statistics
@@ -28,26 +28,24 @@ class ClassifierNetworkGraph:
         :param strided_dim_reduction: Whether to use strided dim reduction instead of max pooling
         """
         self.batch_size = batch_size
-        if network_name == "Baseline_classifier":
-            self.c = BaselineClassifier(self.batch_size, name="classifier_neural_network",
-                                   batch_norm_use=use_batch_normalization, num_channels=num_channels,
-                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
-                                   strided_dim_reduction=strided_dim_reduction)
-        elif network_name == "VGG_classifier":
-            self.c = VGGClassifier(self.batch_size, name="classifier_neural_network",
-                                   batch_norm_use=use_batch_normalization, num_channels=num_channels,
-                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
-                                   strided_dim_reduction=strided_dim_reduction)
-        elif network_name == "FCCClassifier":
-            self.c = FCCLayerClassifier(self.batch_size, name="classifier_neural_network",
-                                   batch_norm_use=use_batch_normalization, num_channels=num_channels,
-                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
-                                   strided_dim_reduction=strided_dim_reduction)
-
         self.input_x = input_x
         self.dropout_rate = dropout_rate
+        
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINE NETWORK HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # Multi task---------------------------------------------------------------------------------------
+        
+        #Main Task
         self.targets = target_placeholder
-
+        self.mainNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
+                                   batch_norm_use=use_batch_normalization, num_channels=num_channels,
+                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
+                                   strided_dim_reduction=strided_dim_reduction)
+        
+        #Aux Task1
+        self.targets1 = target_placeholder1
+        self.auxNetwork1 = self.mainNetwork
+        #---------------------------------------------------------------------------------------------------
+        
         self.training_phase = is_training
         self.n_classes = n_classes
         self.iterations_trained = 0
@@ -64,32 +62,58 @@ class ClassifierNetworkGraph:
         """
         with tf.name_scope("losses"):
             image_inputs = self.data_augment_batch(self.input_x)  # conditionally apply augmentaions
+            
+            #Multi task--------------------------------------------------------------------------------------
+            
+            #Main Task ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             true_outputs = self.targets
+            
             # produce predictions and get layer features to save for visual inspection
-            preds, layer_features = self.c(image_input=image_inputs, training=self.training_phase,
+            preds, layer_features = self.mainNetwork(image_input=image_inputs, training=self.training_phase,
                                            dropout_rate=self.dropout_rate)
-            # compute loss and accuracy
+            
+            
+            # compute loss and accuracy 
             correct_prediction = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs, tf.int64))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             crossentropy_loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs, logits=preds))
-
-            # add loss and accuracy to collections
+            
+            # add loss and accuracy to collections task1
             tf.add_to_collection('crossentropy_losses', crossentropy_loss)
             tf.add_to_collection('accuracy', accuracy)
 
-            # save summaries for the losses, accuracy and image summaries for input images, augmented images
-            # and the layer features
-            if len(self.input_x.get_shape().as_list()) == 4:
-                self.save_features(name="VGG_features", features=layer_features)
-            tf.summary.image('image', [tf.concat(tf.unstack(self.input_x, axis=0), axis=0)])
-            tf.summary.image('augmented_image', [tf.concat(tf.unstack(image_inputs, axis=0), axis=0)])
-            tf.summary.scalar('crossentropy_losses', crossentropy_loss)
-            tf.summary.scalar('accuracy', accuracy)
-
+            
+            #Aux Task1 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            true_outputs1 = self.targets1
+            
+            # produce predictions and get layer features to save for visual inspection
+            preds1, layer_features1 = self.auxillaryNetwork1(image_input=image_inputs, training=self.training_phase,
+                                           dropout_rate=self.dropout_rate)
+            
+            
+            # compute loss and accuracy
+            correct_prediction1 = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs1, tf.int64))
+            accuracy1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
+            crossentropy_loss1 = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs1, logits=preds1))
+            
+            # add loss and accuracy to collections task1
+            tf.add_to_collection('crossentropy_losses', crossentropy_loss)
+            tf.add_to_collection('accuracy', accuracy)
+            #-----------------------------------------------------------------------------------------------
+            
+        #Multi task---------------------------------------------------------------------------------
+        
         return {"crossentropy_losses": tf.add_n(tf.get_collection('crossentropy_losses'),
                                                 name='total_classification_loss'),
-                "accuracy": tf.add_n(tf.get_collection('accuracy'), name='total_accuracy')}
+                "accuracy": tf.add_n(tf.get_collection('accuracy'), name='total_accuracy'),
+                
+                "crossentropy_losses1": tf.add_n(tf.get_collection('crossentropy_losses1'),
+                                                name='total_classification_loss1'),
+                "accuracy1": tf.add_n(tf.get_collection('accuracy1'), name='total_accuracy1')              
+               }
+        #--------------------------------------------------------------------------------------------
 
     def save_features(self, name, features, num_rows_in_grid=4):
         """
@@ -172,17 +196,30 @@ class ClassifierNetworkGraph:
         c_opt = tf.train.AdamOptimizer(beta1=beta1, learning_rate=learning_rate)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)  # Needed for correct batch norm usage
         with tf.control_dependencies(update_ops):
-            c_error_opt_op = c_opt.minimize(losses["crossentropy_losses"], var_list=self.c.variables,
+            
+            #Multi task---------------------------------------------------------------------------------------------
+            
+            #Main Task
+            c_error_opt_op = c_opt.minimize(losses["crossentropy_losses"], var_list=self.mainNetwork.variables,
                                             colocate_gradients_with_ops=True)
-
-        return c_error_opt_op
-
+            
+            #Aux Task1
+            c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.auxNetwork1.variables,
+                                            colocate_gradients_with_ops=True)
+            #--------------------------------------------------------------------------------------------------------
+            
+        #Multi task---------------------------------
+        return (c_error_opt_op,c_error_opt_op1)
+        #-------------------------------------------
+    
     def init_train(self):
         """
         Builds graph ops and returns them
         :return: Summary, losses and training ops
         """
         losses_ops = self.loss()
-        c_error_opt_op = self.train(losses_ops)
-        summary_op = tf.summary.merge_all()
-        return summary_op, losses_ops, c_error_opt_op
+        
+        #Mullti task--------------------------------------------------
+        (c_error_opt_op,c_error_opt_op1) = self.train(losses_ops)
+        return losses_ops, (c_error_opt_op,c_error_opt_op1)
+        #-------------------------------------------------------------
