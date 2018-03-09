@@ -99,8 +99,8 @@ class ClassifierNetworkGraph:
                 tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs1, logits=preds1))
             
             # add loss and accuracy to collections task1
-            tf.add_to_collection('crossentropy_losses', crossentropy_loss)
-            tf.add_to_collection('accuracy', accuracy)
+            tf.add_to_collection('crossentropy_losses1', crossentropy_loss1)
+            tf.add_to_collection('accuracy1', accuracy1)
             #-----------------------------------------------------------------------------------------------
             
         #Multi task---------------------------------------------------------------------------------
