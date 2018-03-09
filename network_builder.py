@@ -33,17 +33,16 @@ class ClassifierNetworkGraph:
         
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINE NETWORK HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Multi task---------------------------------------------------------------------------------------
-        
-        #Main Task
-        self.targets = target_placeholder
-        self.mainNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
+        self.sharedNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
                                    num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
                                    strided_dim_reduction=strided_dim_reduction)
         
+        #Main Task
+        self.targets = target_placeholder
+                
         #Aux Task1
         self.targets1 = target_placeholder1
-        self.auxNetwork1 = self.mainNetwork
         #---------------------------------------------------------------------------------------------------
         
         self.training_phase = is_training
@@ -63,14 +62,16 @@ class ClassifierNetworkGraph:
         with tf.name_scope("losses"):
             image_inputs = self.data_augment_batch(self.input_x)  # conditionally apply augmentaions
             
+            results_From_Network = self.sharedNetwork(image_input=image_inputs, training=self.training_phase,
+                                           dropout_rate=self.dropout_rate)
+            
             #Multi task--------------------------------------------------------------------------------------
             
             #Main Task ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             true_outputs = self.targets
-            
+                       
             # produce predictions and get layer features to save for visual inspection
-            preds, layer_features = self.mainNetwork(image_input=image_inputs, training=self.training_phase,
-                                           dropout_rate=self.dropout_rate)
+            preds, layer_features = results_From_Network['mainTask']
             
             
             # compute loss and accuracy 
@@ -88,8 +89,7 @@ class ClassifierNetworkGraph:
             true_outputs1 = self.targets1
             
             # produce predictions and get layer features to save for visual inspection
-            preds1, layer_features1 = self.auxNetwork1(image_input=image_inputs, training=self.training_phase,
-                                           dropout_rate=self.dropout_rate)
+            preds1, layer_features1 = results_From_Network['auxTask1']
             
             
             # compute loss and accuracy

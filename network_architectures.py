@@ -44,7 +44,10 @@ class VGGClassifier:
         :param dropout_rate: A tf placeholder of type tf.float32 indicating the amount of dropout applied
         :return: Embeddings of size [batch_size, self.num_classes]
         """
-
+        
+        #Put outputs from each task here.
+        results_From_Network = {}
+        
         with tf.variable_scope(self.name, reuse=self.reuse):
             layer_features = []
             with tf.variable_scope('VGGNet'):
@@ -84,5 +87,15 @@ class VGGClassifier:
             self.build_completed = True
             count_parameters(self.variables, "VGGNet")
 
-        return c_conv_encoder, layer_features
+        #Multi task-----------------------------------------
+        
+        #Main Task
+        results_From_Network.update({'mainTask':(c_conv_encoder, layer_features)})
+        
+        #Aux Task1
+        results_From_Network.update({'auxTask1':(c_conv_encoder, layer_features)})
+        
+        #---------------------------------------------------
+        
+        return results_From_Network
 
