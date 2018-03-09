@@ -176,7 +176,7 @@ with tf.Session() as sess:
             
             #Aux Task1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! replace y batch with target values.
             c_loss_value1, acc1 = sess.run(
-            [losses_ops["crossentropy_losses2"], losses_ops["accuracy2"]],
+            [losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
             data_targets1: y_batch, training_phase: False, rotate_data: False})
         
