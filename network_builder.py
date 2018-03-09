@@ -4,7 +4,7 @@ from network_architectures import VGGClassifier
 
 
 class ClassifierNetworkGraph:
-    def __init__(self, input_x, target_placeholder, targetplaceholder1, dropout_rate,
+    def __init__(self, input_x, target_placeholder, target_placeholder1, dropout_rate,
                  batch_size=100, num_channels=1, n_classes=100, is_training=True, augment_rotate_flag=True,
                  tensorboard_use=False, use_batch_normalization=False, strided_dim_reduction=True,
                  network_name='VGG_classifier'):
