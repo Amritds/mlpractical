@@ -200,11 +200,11 @@ class ClassifierNetworkGraph:
             #Multi task---------------------------------------------------------------------------------------------
             
             #Main Task
-            c_error_opt_op = c_opt.minimize(losses["crossentropy_losses"], var_list=self.mainNetwork.variables,
+            c_error_opt_op = c_opt.minimize(losses["crossentropy_losses"], var_list=self.sharedNetwork.variables,
                                             colocate_gradients_with_ops=True)
             
             #Aux Task1
-            c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.auxNetwork1.variables,
+            c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.sharedNetwork1.variables,
                                             colocate_gradients_with_ops=True)
             #--------------------------------------------------------------------------------------------------------
             
