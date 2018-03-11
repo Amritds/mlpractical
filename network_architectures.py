@@ -54,6 +54,7 @@ class VGGClassifier:
                 outputs = image_input
                 for i in range(len(self.layer_stage_sizes)):
                     with tf.variable_scope('conv_stage_{}'.format(i)):
+                        
                         for j in range(self.inner_layer_depth):
                             with tf.variable_scope('conv_{}_{}'.format(i, j)):
                                 if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
@@ -79,6 +80,10 @@ class VGGClassifier:
             c_conv_encoder = outputs
             c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
             c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
+            
+            c_conv_encoder1 = outputs
+            c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder)
+            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_classes)
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
@@ -93,7 +98,7 @@ class VGGClassifier:
         results_From_Network.update({'mainTask':(c_conv_encoder, layer_features)})
         
         #Aux Task1
-        results_From_Network.update({'auxTask1':(c_conv_encoder, layer_features)})
+        results_From_Network.update({'auxTask1':(c_conv_encoder1, layer_features)})
         
         #---------------------------------------------------
         
