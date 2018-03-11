@@ -6,6 +6,11 @@ from data_providers import CIFAR100DataProvider
 from network_builder import ClassifierNetworkGraph
 from utils.parser_utils import ParserClass
 from utils.storage import build_experiment_folder, save_statistics
+import pickle
+
+# Get auxillary targets transformation ===========================================================================================
+with open('clustering20.pkl', 'rb') as f:
+    aux1 = pickle.load(f)
 
 # Resets any previous graphs to clear memory =====================================================================================
 tf.reset_default_graph()  
@@ -128,7 +133,7 @@ with tf.Session() as sess:
             _, c_loss_value1, acc1 = sess.run(
             [c_error_opt_op1, losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets1: y_batch, training_phase: True, rotate_data: False})
+            data_targets1: aux1[y_batch], training_phase: True, rotate_data: False})
                     
             total_c_loss1 += c_loss_value1  # add loss of current iter to sum
             total_accuracy1 += acc1 # add acc of current iter to sum
