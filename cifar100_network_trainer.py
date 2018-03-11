@@ -204,10 +204,10 @@ with tf.Session() as sess:
             save_path = val_saver.save(sess, "{}/best_validation_{}_{}.ckpt".format(saved_models_filepath, experiment_name, e))
             print("Saved best validation score model at", save_path)
 
-            # save statistics of this epoch, train and val without test set performance
-            save_statistics(logs_filepath, "result_summary_statistics",
-                            [e, total_c_loss, total_accuracy, total_val_c_loss, total_val_accuracy,
-                             -1, -1])
+        # save statistics of this epoch, train and val without test set performance
+        save_statistics(logs_filepath, "result_summary_statistics",
+                       [e, total_c_loss, total_accuracy, total_val_c_loss, total_val_accuracy,
+                        -1, -1])
 
         # TESTING - Only concerns Main Task
         ##########################################################################################################################
@@ -216,20 +216,20 @@ with tf.Session() as sess:
         total_test_c_loss = 0.
         total_test_accuracy = 0.
         # compute test loss and accuracy and save
-        for batch_id, (x_batch, y_batch) in enumerate(test_data):
-            c_loss_value, acc = sess.run(
-            [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
-            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets: y_batch, training_phase: False, rotate_data: False})
+    for batch_id, (x_batch, y_batch) in enumerate(test_data):
+        c_loss_value, acc = sess.run(
+        [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
+        feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+        data_targets: y_batch, training_phase: False, rotate_data: False})
             
-            total_test_c_loss += c_loss_value
-            total_test_accuracy += acc
-            iter_out = "test_loss: {}, test_accuracy: {}".format(total_test_c_loss / (batch_idx + 1),
+        total_test_c_loss += c_loss_value
+        total_test_accuracy += acc
+        iter_out = "test_loss: {}, test_accuracy: {}".format(total_test_c_loss / (batch_idx + 1),
                                                                      acc / (batch_idx + 1))
 
-        total_test_c_loss /= total_test_batches
-        total_test_accuracy /= total_test_batches
+    total_test_c_loss /= total_test_batches
+    total_test_accuracy /= total_test_batches
 
-        save_statistics(logs_filepath, "result_summary_statistics",
-                        ["test set performance", -1, -1, -1, -1,
-                         total_test_c_loss, total_test_accuracy])
+    save_statistics(logs_filepath, "result_summary_statistics",
+                     ["test set performance", -1, -1, -1, -1,
+                     total_test_c_loss, total_test_accuracy])
