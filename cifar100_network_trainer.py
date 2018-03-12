@@ -13,7 +13,7 @@ with open('clustering20.pkl', 'rb') as f:
     aux1 = pickle.load(f)
 
 # Resets any previous graphs to clear memory =====================================================================================
-tf.reset_default_graph()  
+tf.reset_default_graph()
 
 # Parser =========================================================================================================================
 parser = argparse.ArgumentParser(description='Welcome to CNN experiments script')  # generates an argument parser
@@ -62,7 +62,7 @@ classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placehol
                                             num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
                                             strided_dim_reduction=strided_dim_reduction,
-                                            use_batch_normalization=batch_norm, network_name=classifier_type)  # initialize network. 
+                                            use_batch_normalization=batch_norm, network_name=classifier_type,branch_loc = 2)  # initialize network. 
 
 
 # Setup Computational Graph =========================================================================================================
@@ -102,43 +102,43 @@ with tf.Session() as sess:
 
     best_val_accuracy = 0.
     for e in range(start_epoch, epochs):
-        
+
         # TRAINING
         #####################################################################################################################
         #Multi task-----------------------------------------------------------------
-        
+
         #Main Task
         total_c_loss = 0.
         total_accuracy = 0.
-        
+
         #Aux Task1
         total_c_loss1 = 0.
         total_accuracy1 = 0.
         #--------------------------------------------------------------------------
-        
+
         for batch_idx, (x_batch, y_batch) in enumerate(train_data):
             iter_id = e * total_train_batches + batch_idx
             #Multi task---------------------------------------------------------------------------------
-            
+
             #Main Task
             _, c_loss_value, acc = sess.run(
             [c_error_opt_op, losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
             data_targets: y_batch, training_phase: True, rotate_data: False})
-                        
+
             total_c_loss += c_loss_value  # add loss of current iter to sum
             total_accuracy += acc # add acc of current iter to sum
-                    
+
             #Aux Task1
             _, c_loss_value1, acc1 = sess.run(
             [c_error_opt_op1, losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
             data_targets1: aux1[y_batch], training_phase: True, rotate_data: False})
-                    
+
             total_c_loss1 += c_loss_value1  # add loss of current iter to sum
             total_accuracy1 += acc1 # add acc of current iter to sum
-            #---------------------------------------------------------------------------------------------        
-                            
+            #---------------------------------------------------------------------------------------------
+
         #Multi task-------------------------------------------------------------
         #Main Task
         total_c_loss /= total_train_batches  # compute mean of loss
@@ -148,58 +148,58 @@ with tf.Session() as sess:
         total_c_loss1 /= total_train_batches  # compute mean of loss
         total_accuracy1 /= total_train_batches # compute mean of accuracy
         #-----------------------------------------------------------------------
-        
+
         # save graph and weights
         save_path = train_saver.save(sess, "{}/{}_{}.ckpt".format(saved_models_filepath, experiment_name, e))
-        
-        # VALIDATION 
+
+        # VALIDATION
         ############################################################################################################################
-        
+
         #Multi task-----------------------------------------------------
-        
+
         #Main Task
         total_val_c_loss = 0.
         total_val_accuracy = 0.
-        
+
         #Aux Task1
         total_val_c_loss1 = 0.
         total_val_accuracy1 = 0.
         #--------------------------------------------------------------
-        
+
         for batch_idx, (x_batch, y_batch) in enumerate(val_data):
-        
+
             #Multi task--------------------------------------------------------------------
-            
+
             #Main Task
             c_loss_value, acc = sess.run(
             [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
             data_targets: y_batch, training_phase: False, rotate_data: False})
-        
+
             total_val_c_loss += c_loss_value
             total_val_accuracy += acc
-            
+
             #Aux Task1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! replace y batch with target values.
             c_loss_value1, acc1 = sess.run(
             [losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
             data_targets1: y_batch, training_phase: False, rotate_data: False})
-        
+
             total_val_c_loss1 += c_loss_value1
             total_val_accuracy1 += acc1
             #-----------------------------------------------------------------------------
-            
+
         #Multi task------------------------------------
-        
+
         #Main Task
         total_val_c_loss /= total_val_batches
         total_val_accuracy /= total_val_batches
-        
+
         #Task2
         total_val_c_loss1 /= total_val_batches
         total_val_accuracy1 /= total_val_batches
         #----------------------------------------------
-        
+
         #Only concerns Main Task
         if best_val_accuracy < total_val_accuracy:  # check if val acc better than the previous best and if
             # so save current as best and save the model as the best validation model to be used on the test set
@@ -226,7 +226,7 @@ with tf.Session() as sess:
         [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
         feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
         data_targets: y_batch, training_phase: False, rotate_data: False})
-            
+
         total_test_c_loss += c_loss_value
         total_test_accuracy += acc
         iter_out = "test_loss: {}, test_accuracy: {}".format(total_test_c_loss / (batch_idx + 1),
