@@ -5,7 +5,7 @@ from network_architectures import VGGClassifier
 
 class ClassifierNetworkGraph:
     def __init__(self, input_x, target_placeholder, target_placeholder1, dropout_rate,
-                 batch_size=100, num_channels=1, n_classes=100, is_training=True, augment_rotate_flag=True,
+                 batch_size=100, num_channels=1, n_classes=100, n_aux1_classes=20,is_training=True, augment_rotate_flag=True,
                  tensorboard_use=False, use_batch_normalization=False, strided_dim_reduction=True,
                  network_name='VGG_classifier'):
 
@@ -35,7 +35,7 @@ class ClassifierNetworkGraph:
         # Multi task---------------------------------------------------------------------------------------
         self.sharedNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
-                                   num_classes=n_classes, layer_stage_sizes=[64, 128, 256],
+                                   num_classes=n_classes, num_aux1_classes = n_aux1_classes ,layer_stage_sizes=[64, 128, 256],
                                    strided_dim_reduction=strided_dim_reduction)
         
         #Main Task
@@ -93,7 +93,7 @@ class ClassifierNetworkGraph:
             
             
             # compute loss and accuracy
-            correct_prediction1 = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs1, tf.int64))
+            correct_prediction1 = tf.equal(tf.argmax(preds1, 1), tf.cast(true_outputs1, tf.int64))
             accuracy1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
             crossentropy_loss1 = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs1, logits=preds1))

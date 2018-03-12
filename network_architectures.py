@@ -5,7 +5,7 @@ from tensorflow.python.ops.nn_ops import leaky_relu, relu
 from utils.network_summary import count_parameters
 
 class VGGClassifier:
-    def __init__(self, batch_size, layer_stage_sizes, name, num_classes, num_channels=1, batch_norm_use=False,
+    def __init__(self, batch_size, layer_stage_sizes, name, num_classes, num_aux1_classes, num_channels=1, batch_norm_use=False,
                  inner_layer_depth=2, strided_dim_reduction=True):
 
         """
@@ -30,7 +30,10 @@ class VGGClassifier:
         self.num_channels = num_channels
         self.layer_stage_sizes = layer_stage_sizes
         self.name = name
+        
         self.num_classes = num_classes
+        self.num_aux1_classes = num_aux1_classes
+        
         self.batch_norm_use = batch_norm_use
         self.inner_layer_depth = inner_layer_depth
         self.strided_dim_reduction = strided_dim_reduction
@@ -82,8 +85,8 @@ class VGGClassifier:
             c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
             
             c_conv_encoder1 = outputs
-            c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder)
-            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_classes)
+            c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
+            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)

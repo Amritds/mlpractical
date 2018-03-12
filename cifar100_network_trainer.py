@@ -51,6 +51,8 @@ data_targets = tf.placeholder(tf.int32, [batch_size], 'data-targets')
 
 #Aux Task1
 data_targets1 = tf.placeholder(tf.int32, [batch_size], 'data-targets1')
+n_aux1_classes = 20
+
 #------------------------------------------------------------------------------------
 
 training_phase = tf.placeholder(tf.bool, name='training-flag')
@@ -59,7 +61,8 @@ dropout_rate = tf.placeholder(tf.float32, name='dropout-prob')
 
 classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets, target_placeholder1=data_targets1,
                                             dropout_rate=dropout_rate, batch_size=batch_size,
-                                            num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,
+                                            num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,      
+                                            n_aux1_classes=n_aux1_classes, 
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
                                             strided_dim_reduction=strided_dim_reduction,
                                             use_batch_normalization=batch_norm, network_name=classifier_type)  # initialize network. 
