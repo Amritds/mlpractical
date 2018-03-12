@@ -34,6 +34,7 @@ class ClassifierNetworkGraph:
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DEFINE NETWORK HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Multi task---------------------------------------------------------------------------------------
         self.sharedNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
+                                          aux1_name="aux1_classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
                                    num_classes=n_classes, num_aux1_classes = n_aux1_classes ,layer_stage_sizes=[64, 128, 256],
                                    strided_dim_reduction=strided_dim_reduction)
@@ -204,7 +205,7 @@ class ClassifierNetworkGraph:
                                             colocate_gradients_with_ops=True)
             
             #Aux Task1
-            c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.sharedNetwork.variables,
+            c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.sharedNetwork.variables1,
                                             colocate_gradients_with_ops=True)
             #--------------------------------------------------------------------------------------------------------
             

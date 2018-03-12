@@ -5,7 +5,7 @@ from tensorflow.python.ops.nn_ops import leaky_relu, relu
 from utils.network_summary import count_parameters
 
 class VGGClassifier:
-    def __init__(self, batch_size, layer_stage_sizes, name, num_classes, num_aux1_classes, num_channels=1, batch_norm_use=False,
+    def __init__(self, batch_size, layer_stage_sizes, name, aux1_name,num_classes, num_aux1_classes, num_channels=1, batch_norm_use=False,
                  inner_layer_depth=2, strided_dim_reduction=True):
 
         """
@@ -29,7 +29,16 @@ class VGGClassifier:
         self.batch_size = batch_size
         self.num_channels = num_channels
         self.layer_stage_sizes = layer_stage_sizes
+        
+        #Multi task--------------------------------------------
+        
+        #Main task
         self.name = name
+
+        #Aux task
+        self.aux1_name =aux1_name
+        
+        #-------------------------------------------------------
         
         self.num_classes = num_classes
         self.num_aux1_classes = num_aux1_classes
@@ -52,45 +61,55 @@ class VGGClassifier:
         results_From_Network = {}
         
         with tf.variable_scope(self.name, reuse=self.reuse):
-            layer_features = []
-            with tf.variable_scope('VGGNet'):
-                outputs = image_input
-                for i in range(len(self.layer_stage_sizes)):
-                    with tf.variable_scope('conv_stage_{}'.format(i)):
+            with tf.variable_scope(self.aux1_name, reuse=self.reuse):
+                layer_features = []
+                with tf.variable_scope('VGGNet'):
+                    outputs = image_input
+                    for i in range(len(self.layer_stage_sizes)):
+                        with tf.variable_scope('conv_stage_{}'.format(i)):
                         
-                        for j in range(self.inner_layer_depth):
-                            with tf.variable_scope('conv_{}_{}'.format(i, j)):
-                                if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
-                                    stride = 2
-                                else:
-                                    stride = 1
-                                outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
-                                                           strides=(stride, stride),
-                                                           padding='SAME', activation=None)
-                                outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
-                                layer_features.append(outputs)
-                                if self.batch_norm_use:
-                                    outputs = batch_norm(outputs, decay=0.99, scale=True,
-                                                         center=True, is_training=training, renorm=False)
-                        if self.strided_dim_reduction==False:
-                            outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
+                            for j in range(self.inner_layer_depth):
+                                with tf.variable_scope('conv_{}_{}'.format(i, j)):
+                                    if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
+                                        stride = 2
+                                    else:
+                                        stride = 1
+                                    outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
+                                                               strides=(stride, stride),
+                                                               padding='SAME', activation=None)
+                                    outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
+                                    layer_features.append(outputs)
+                                    if self.batch_norm_use:
+                                        outputs = batch_norm(outputs, decay=0.99, scale=True,
+                                                             center=True, is_training=training, renorm=False)
+                            if self.strided_dim_reduction==False:
+                                outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
 
-                        outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
+                            outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
                                                                               # apply dropout only at dimensionality
                                                                               # reducing steps, i.e. the last layer in
                                                                               # every group
 
-            c_conv_encoder = outputs
-            c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
-            c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
+                c_conv_encoder = outputs
+                c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
+                c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
             
-            c_conv_encoder1 = outputs
-            c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
-            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
+                c_conv_encoder1 = outputs
+                c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
+                c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
 
         self.reuse = True
+        
+        #Multi task------------------------------------------------------------------------------------
+        
+        #Main task
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
 
+        #Aux task
+        self.variables1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.aux1_name)
+        
+        #----------------------------------------------------------------------------------------------
+        
         if not self.build_completed:
             self.build_completed = True
             count_parameters(self.variables, "VGGNet")
