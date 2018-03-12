@@ -51,9 +51,8 @@ class VGGClassifier:
         with tf.variable_scope(self.name, reuse=self.reuse):
             layer_features = []
             with tf.variable_scope('VGGNet'):
-                # SHARED ------------------------------------------
                 outputs = image_input
-                for i in range(1): #range(len(self.layer_stage_sizes)):
+                for i in range(len(self.layer_stage_sizes)):
                     with tf.variable_scope('conv_stage_{}'.format(i)):
                         for j in range(self.inner_layer_depth):
                             with tf.variable_scope('conv_{}_{}'.format(i, j)):
@@ -76,56 +75,6 @@ class VGGClassifier:
                                                                               # apply dropout only at dimensionality
                                                                               # reducing steps, i.e. the last layer in
                                                                               # every group
-
-                # BIFURCATED ------------------------------------------
-                with tf.variable_scope():
-                   outputs1 = outputs
-                   layer_features1 = layer_features
-                   for i in range(1, len(self.layer_stage_sizes)):
-                       with tf.variable_scope('conv_stage_{}'.format(i)):
-                           for j in range(self.inner_layer_depth):
-                               with tf.variable_scope('conv_{}_{}'.format(i, j)):
-                                   if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
-                                       stride = 2
-                                   else:
-                                       stride = 1
-                                   outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
-                                                           strides=(stride, stride),
-                                                           padding='SAME', activation=None)
-                                   outputs1 = tf.layers.conv2d(outputs1, self.layer_stage_sizes[i], [3, 3],
-                                                           strides=(stride, stride),
-                                                           padding='SAME', activation=None)
-
-
-
-                                   outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
-                                   outputs1 = leaky_relu(outputs1, name="leaky_relu1{}".format(i))  
-
-                                   layer_features.append(outputs)
-                                   layer_features1.append(outputs1)
-
-                                   if self.batch_norm_use:
-                                       outputs = batch_norm(outputs, decay=0.99, scale=True,
-                                                         center=True, is_training=training, renorm=False)
-                                       outputs1 = batch_norm(outputs1, decay=0.99, scale=True,
-                                                         center=True, is_training=training, renorm=False)
-
-
-                        if self.strided_dim_reduction==False:
-                            outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
-                            outputs1 = tf.layers.max_pooling2d(outputs1, pool_size=(2, 2), strides=2)
-
-                        outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
-                        outputs1 = tf.layers.dropout(outputs1, rate=dropout_rate, training=training)
-                                                                              # apply dropout only at dimensionality
-                                                                              # reducing steps, i.e. the last layer in
-                                                                              # every group
-
- 
-                 
-
-
-
 
             c_conv_encoder = outputs
             c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
