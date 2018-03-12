@@ -6,6 +6,11 @@ from data_providers import CIFAR100DataProvider
 from network_builder import ClassifierNetworkGraph
 from utils.parser_utils import ParserClass
 from utils.storage import build_experiment_folder, save_statistics
+import pickle
+
+# Get auxillary targets transformation ===========================================================================================
+with open('clustering20.pkl', 'rb') as f:
+    aux1 = pickle.load(f)
 
 # Resets any previous graphs to clear memory =====================================================================================
 tf.reset_default_graph()  
@@ -46,6 +51,8 @@ data_targets = tf.placeholder(tf.int32, [batch_size], 'data-targets')
 
 #Aux Task1
 data_targets1 = tf.placeholder(tf.int32, [batch_size], 'data-targets1')
+n_aux1_classes = 20
+
 #------------------------------------------------------------------------------------
 
 training_phase = tf.placeholder(tf.bool, name='training-flag')
@@ -54,7 +61,8 @@ dropout_rate = tf.placeholder(tf.float32, name='dropout-prob')
 
 classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets, target_placeholder1=data_targets1,
                                             dropout_rate=dropout_rate, batch_size=batch_size,
-                                            num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,
+                                            num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,      
+                                            n_aux1_classes=n_aux1_classes, 
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
                                             strided_dim_reduction=strided_dim_reduction,
                                             use_batch_normalization=batch_norm, network_name=classifier_type)  # initialize network. 
@@ -128,7 +136,7 @@ with tf.Session() as sess:
             _, c_loss_value1, acc1 = sess.run(
             [c_error_opt_op1, losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets1: y_batch, training_phase: True, rotate_data: False})
+            data_targets1: aux1[y_batch], training_phase: True, rotate_data: False})
                     
             total_c_loss1 += c_loss_value1  # add loss of current iter to sum
             total_accuracy1 += acc1 # add acc of current iter to sum
@@ -204,10 +212,10 @@ with tf.Session() as sess:
             save_path = val_saver.save(sess, "{}/best_validation_{}_{}.ckpt".format(saved_models_filepath, experiment_name, e))
             print("Saved best validation score model at", save_path)
 
-            # save statistics of this epoch, train and val without test set performance
-            save_statistics(logs_filepath, "result_summary_statistics",
-                            [e, total_c_loss, total_accuracy, total_val_c_loss, total_val_accuracy,
-                             -1, -1])
+        # save statistics of this epoch, train and val without test set performance
+        save_statistics(logs_filepath, "result_summary_statistics",
+                       [e, total_c_loss, total_accuracy, total_val_c_loss, total_val_accuracy,
+                        -1, -1])
 
         # TESTING - Only concerns Main Task
         ##########################################################################################################################
@@ -216,20 +224,20 @@ with tf.Session() as sess:
         total_test_c_loss = 0.
         total_test_accuracy = 0.
         # compute test loss and accuracy and save
-        for batch_id, (x_batch, y_batch) in enumerate(test_data):
-            c_loss_value, acc = sess.run(
-            [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
-            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets: y_batch, training_phase: False, rotate_data: False})
+    for batch_id, (x_batch, y_batch) in enumerate(test_data):
+        c_loss_value, acc = sess.run(
+        [losses_ops["crossentropy_losses"], losses_ops["accuracy"]],
+        feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+        data_targets: y_batch, training_phase: False, rotate_data: False})
             
-            total_test_c_loss += c_loss_value
-            total_test_accuracy += acc
-            iter_out = "test_loss: {}, test_accuracy: {}".format(total_test_c_loss / (batch_idx + 1),
+        total_test_c_loss += c_loss_value
+        total_test_accuracy += acc
+        iter_out = "test_loss: {}, test_accuracy: {}".format(total_test_c_loss / (batch_idx + 1),
                                                                      acc / (batch_idx + 1))
 
-        total_test_c_loss /= total_test_batches
-        total_test_accuracy /= total_test_batches
+    total_test_c_loss /= total_test_batches
+    total_test_accuracy /= total_test_batches
 
-        save_statistics(logs_filepath, "result_summary_statistics",
-                        ["test set performance", -1, -1, -1, -1,
-                         total_test_c_loss, total_test_accuracy])
+    save_statistics(logs_filepath, "result_summary_statistics",
+                     ["test set performance", -1, -1, -1, -1,
+                     total_test_c_loss, total_test_accuracy])

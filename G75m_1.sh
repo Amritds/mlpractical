@@ -31,4 +31,4 @@ export TMP=/disk/scratch/${STUDENT_ID}/
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 export MLP_DATA_DIR="/afs/inf.ed.ac.uk/group/teaching/mlp/data/2017-18/"
 
-python adam_leaky.py --batch_size 128 --epochs 100 --experiment_prefix base1LeakyReluAdam --dropout_rate 0.4 --batch_norm_use True --strided_dim_reduction False --seed 25012018 --classifier_type Baseline_classifier
+python cifar100_network_trainer.py --batch_size 128 --epochs 100 --experiment_prefix mtl1aux-20clusters --dropout_rate 0.65 --batch_norm_use True --strided_dim_reduction False --seed 25012018 --classifier_type MTL_classifier
