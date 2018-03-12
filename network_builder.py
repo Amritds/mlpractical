@@ -93,7 +93,7 @@ class ClassifierNetworkGraph:
             
             
             # compute loss and accuracy
-            correct_prediction1 = tf.equal(tf.argmax(preds, 1), tf.cast(true_outputs1, tf.int64))
+            correct_prediction1 = tf.equal(tf.argmax(preds1, 1), tf.cast(true_outputs1, tf.int64))
             accuracy1 = tf.reduce_mean(tf.cast(correct_prediction1, tf.float32))
             crossentropy_loss1 = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs1, logits=preds1))
