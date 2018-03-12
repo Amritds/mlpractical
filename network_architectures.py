@@ -169,7 +169,7 @@ class MTLClassifier:
         self.inner_layer_depth = inner_layer_depth
         self.strided_dim_reduction = strided_dim_reduction
         self.build_completed = False
-        if (self.branch_loc > len(self.layer_stage_sizes)):
+        if (branch_loc > len(self.layer_stage_sizes)):
             self.branch_loc = len(self.layer_stage_sizes)
         else:
             self.branch_loc = branch_loc
@@ -193,7 +193,7 @@ class MTLClassifier:
                 layer_features = []
                 with tf.variable_scope('VGGNet'):
                     outputs = image_input
-                    for i in range(branch_loc):
+                    for i in range(self.branch_loc):
                         with tf.variable_scope('conv_stage_{}'.format(i)):
 
                             for j in range(self.inner_layer_depth):
@@ -220,7 +220,7 @@ class MTLClassifier:
 
         with tf.variable_scope(self.name, reuse=self.reuse):
             with tf.variable_scope('VGGNet'):
-                for i in range(branch_loc,len(self.layer_stage_sizes)):
+                for i in range(self.branch_loc,len(self.layer_stage_sizes)):
                     with tf.variable_scope('conv_stage_{}'.format(i)):
                         for j in range(self.inner_layer_depth):
                             with tf.variable_scope('conv_{}_{}'.format(i, j)):
@@ -247,7 +247,7 @@ class MTLClassifier:
 
         with tf.variable_scope(self.aux1_name, reuse=self.reuse):
             with tf.variable_scope('VGGNet'):
-                for i in range(branch_loc,len(self.layer_stage_sizes)):
+                for i in range(self.branch_loc,len(self.layer_stage_sizes)):
                     with tf.variable_scope('conv_stage_{}'.format(i)):
                         for j in range(self.inner_layer_depth):
                             with tf.variable_scope('conv_{}_{}'.format(i, j)):

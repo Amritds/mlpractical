@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from network_architectures import VGGClassifier
+from network_architectures import VGGClassifier, MTLClassifier
 
 
 class ClassifierNetworkGraph:
@@ -37,7 +37,7 @@ class ClassifierNetworkGraph:
                                           aux1_name="aux1_classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
                                    num_classes=n_classes, num_aux1_classes = n_aux1_classes ,layer_stage_sizes=[64, 128, 256],
-                                   strided_dim_reduction=strided_dim_reduction,branch_loc=2)
+                                   strided_dim_reduction=strided_dim_reduction, branch_loc=2)
 
         #Main Task
         self.targets = target_placeholder
