@@ -90,13 +90,15 @@ class VGGClassifier:
                                                                               # reducing steps, i.e. the last layer in
                                                                               # every group
 
-                c_conv_encoder = outputs
-                c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
-                c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
+        with tf.variable_scope(self.name, reuse=self.reuse):
+            c_conv_encoder = outputs
+            c_conv_encoder = tf.contrib.layers.flatten(c_conv_encoder)
+            c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
             
-                c_conv_encoder1 = outputs
-                c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
-                c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
+	 with tf.variable_scope(self.aux1_name, reuse=self.reuse):
+            c_conv_encoder1 = outputs
+            c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
+            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
 
         self.reuse = True
         
