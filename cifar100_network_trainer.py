@@ -9,7 +9,7 @@ from utils.storage import build_experiment_folder, save_statistics
 import pickle
 
 # Get auxillary targets transformation ===========================================================================================
-with open('clustering20.pkl', 'rb') as f:
+with open('agg/clustering20.pkl', 'rb') as f:
     aux1 = pickle.load(f)
 
 # Resets any previous graphs to clear memory =====================================================================================
