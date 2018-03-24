@@ -9,8 +9,14 @@ from utils.storage import build_experiment_folder, save_statistics
 import pickle
 
 # Get auxillary targets transformation ===========================================================================================
-with open('clustering20.pkl', 'rb') as f:
+with open('clustering15.pkl', 'rb') as f:
     aux1 = pickle.load(f)
+
+with open('clustering40.pkl', 'rb') as f:
+    aux2 = pickle.load(f)
+
+with open('clustering80.pkl', 'rb') as f:
+    aux3 = pickle.load(f)
 
 # Resets any previous graphs to clear memory =====================================================================================
 tf.reset_default_graph()  
@@ -51,7 +57,15 @@ data_targets = tf.placeholder(tf.int32, [batch_size], 'data-targets')
 
 #Aux Task1
 data_targets1 = tf.placeholder(tf.int32, [batch_size], 'data-targets1')
-n_aux1_classes = 20
+n_aux1_classes = 15
+
+#Aux Task2
+data_targets2 = tf.placeholder(tf.int32, [batch_size], 'data-targets2')
+n_aux2_classes = 40
+
+#Aux Task3
+data_targets3 = tf.placeholder(tf.int32, [batch_size], 'data-targets3')
+n_aux3_classes = 60
 
 #------------------------------------------------------------------------------------
 
@@ -59,10 +73,12 @@ training_phase = tf.placeholder(tf.bool, name='training-flag')
 rotate_data = tf.placeholder(tf.bool, name='rotate-flag')
 dropout_rate = tf.placeholder(tf.float32, name='dropout-prob')
 
-classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets, target_placeholder1=data_targets1,
+classifier_network = ClassifierNetworkGraph(input_x=data_inputs, target_placeholder=data_targets, target_placeholder1=data_targets1,target_placeholder2=data_targets2,target_placeholder3=data_targets3,
                                             dropout_rate=dropout_rate, batch_size=batch_size,
                                             num_channels=train_data.inputs.shape[3], n_classes=train_data.num_classes,      
                                             n_aux1_classes=n_aux1_classes, 
+                                            n_aux2_classes=n_aux2_classes,
+                                            n_aux3_classes=n_aux3_classes, 
                                             is_training=training_phase, augment_rotate_flag=rotate_data,
                                             strided_dim_reduction=strided_dim_reduction,
                                             use_batch_normalization=batch_norm, network_name=classifier_type)  # initialize network. 
@@ -80,7 +96,7 @@ start_epoch = continue_from_epoch if continue_from_epoch != -1 else 0  # if new 
 # continue where left off
 
 #Multi task-----------------------------------------------------------------------------------------------------
-losses_ops, (c_error_opt_op,c_error_opt_op1) = classifier_network.init_train()  # get graph operations (ops)
+losses_ops, (c_error_opt_op,c_error_opt_op1,c_error_opt_op2,c_error_opt_op3) = classifier_network.init_train()  # get graph operations (ops)
 #---------------------------------------------------------------------------------------------------------------
 
 total_train_batches = train_data.num_batches
@@ -117,6 +133,14 @@ with tf.Session() as sess:
         #Aux Task1
         total_c_loss1 = 0.
         total_accuracy1 = 0.
+        
+        #Aux Task2
+        total_c_loss2 = 0.
+        total_accuracy2 = 0.
+        
+        #Aux Task3
+        total_c_loss3 = 0.
+        total_accuracy3 = 0.
         #--------------------------------------------------------------------------
         
         for batch_idx, (x_batch, y_batch) in enumerate(train_data):
@@ -140,6 +164,24 @@ with tf.Session() as sess:
                     
             total_c_loss1 += c_loss_value1  # add loss of current iter to sum
             total_accuracy1 += acc1 # add acc of current iter to sum
+            
+            #Aux Task2
+            _, c_loss_value2, acc2 = sess.run(
+            [c_error_opt_op2, losses_ops["crossentropy_losses2"], losses_ops["accuracy2"]],
+            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+            data_targets2: aux2[y_batch], training_phase: True, rotate_data: False})
+                    
+            total_c_loss2 += c_loss_value2  # add loss of current iter to sum
+            total_accuracy2 += acc2 # add acc of current iter to sum
+            
+            #Aux Task2
+            _, c_loss_value3, acc3 = sess.run(
+            [c_error_opt_op3, losses_ops["crossentropy_losses3"], losses_ops["accuracy3"]],
+            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+            data_targets3: aux3[y_batch], training_phase: True, rotate_data: False})
+                    
+            total_c_loss3 += c_loss_value3  # add loss of current iter to sum
+            total_accuracy3 += acc3 # add acc of current iter to sum
             #---------------------------------------------------------------------------------------------        
                             
         #Multi task-------------------------------------------------------------
@@ -150,6 +192,14 @@ with tf.Session() as sess:
         #Aux Task1
         total_c_loss1 /= total_train_batches  # compute mean of loss
         total_accuracy1 /= total_train_batches # compute mean of accuracy
+        
+         #Aux Task2
+        total_c_loss2 /= total_train_batches  # compute mean of loss
+        total_accuracy2 /= total_train_batches # compute mean of accuracy
+        
+        #Aux Task3
+        total_c_loss3 /= total_train_batches  # compute mean of loss
+        total_accuracy3 /= total_train_batches # compute mean of accuracy
         #-----------------------------------------------------------------------
         
         # save graph and weights
@@ -167,6 +217,14 @@ with tf.Session() as sess:
         #Aux Task1
         total_val_c_loss1 = 0.
         total_val_accuracy1 = 0.
+        
+        #Aux Task2
+        total_val_c_loss2 = 0.
+        total_val_accuracy2 = 0.
+        
+        #Aux Task3
+        total_val_c_loss3 = 0.
+        total_val_accuracy3 = 0.
         #--------------------------------------------------------------
         
         for batch_idx, (x_batch, y_batch) in enumerate(val_data):
@@ -186,10 +244,28 @@ with tf.Session() as sess:
             c_loss_value1, acc1 = sess.run(
             [losses_ops["crossentropy_losses1"], losses_ops["accuracy1"]],
             feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
-            data_targets1: y_batch, training_phase: False, rotate_data: False})
+            data_targets1: aux1[y_batch], training_phase: False, rotate_data: False})
         
             total_val_c_loss1 += c_loss_value1
             total_val_accuracy1 += acc1
+            
+            #Aux Task2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! replace y batch with target values.
+            c_loss_value2, acc2 = sess.run(
+            [losses_ops["crossentropy_losses2"], losses_ops["accuracy2"]],
+            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+            data_targets2: aux2[y_batch], training_phase: False, rotate_data: False})
+        
+            total_val_c_loss2 += c_loss_value2
+            total_val_accuracy2 += acc2
+            
+            #Aux Task2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! replace y batch with target values.
+            c_loss_value3, acc3 = sess.run(
+            [losses_ops["crossentropy_losses2"], losses_ops["accuracy2"]],
+            feed_dict={dropout_rate: dropout_rate_value, data_inputs: x_batch,
+            data_targets3: aux3[y_batch], training_phase: False, rotate_data: False})
+        
+            total_val_c_loss3 += c_loss_value3
+            total_val_accuracy3 += acc3
             #-----------------------------------------------------------------------------
             
         #Multi task------------------------------------
@@ -201,6 +277,14 @@ with tf.Session() as sess:
         #Task2
         total_val_c_loss1 /= total_val_batches
         total_val_accuracy1 /= total_val_batches
+        
+        #Task2
+        total_val_c_loss2 /= total_val_batches
+        total_val_accuracy2 /= total_val_batches
+        
+        #Task3
+        total_val_c_loss3 /= total_val_batches
+        total_val_accuracy3 /= total_val_batches
         #----------------------------------------------
         
         #Only concerns Main Task

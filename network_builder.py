@@ -4,8 +4,8 @@ from network_architectures import VGGClassifier
 
 
 class ClassifierNetworkGraph:
-    def __init__(self, input_x, target_placeholder, target_placeholder1, dropout_rate,
-                 batch_size=100, num_channels=1, n_classes=100, n_aux1_classes=20,is_training=True, augment_rotate_flag=True,
+    def __init__(self, input_x, target_placeholder, target_placeholder1, target_placeholder2, target_placeholder3, dropout_rate,
+                 batch_size=100, num_channels=1, n_classes=100, n_aux1_classes=20,n_aux2_classes=20,n_aux3_classes=20, is_training=True, augment_rotate_flag=True,
                  tensorboard_use=False, use_batch_normalization=False, strided_dim_reduction=True,
                  network_name='VGG_classifier'):
 
@@ -35,14 +35,22 @@ class ClassifierNetworkGraph:
         # Multi task---------------------------------------------------------------------------------------
         self.sharedNetwork= VGGClassifier(self.batch_size, name="classifier_neural_network",
                                           aux1_name="aux1_classifier_neural_network",
+                                          aux2_name="aux2_classifier_neural_network",
+                                          aux3_name="aux3_classifier_neural_network",
                                    batch_norm_use=use_batch_normalization, num_channels=num_channels,
-                                   num_classes=n_classes, num_aux1_classes = n_aux1_classes ,layer_stage_sizes=[64, 128, 256],
+                                   num_classes=n_classes, num_aux1_classes = n_aux1_classes, num_aux2_classes = n_aux2_classes,num_aux3_classes = n_aux3_classes,layer_stage_sizes=[64, 128, 256],
                                    strided_dim_reduction=strided_dim_reduction)
         
         #Main Task
         self.targets = target_placeholder
                 
         #Aux Task1
+        self.targets1 = target_placeholder1
+        
+        #Aux Task2
+        self.targets1 = target_placeholder1
+        
+        #Aux Task3
         self.targets1 = target_placeholder1
         #---------------------------------------------------------------------------------------------------
         
@@ -104,6 +112,42 @@ class ClassifierNetworkGraph:
             tf.add_to_collection('accuracy1', accuracy1)
             #-----------------------------------------------------------------------------------------------
             
+            #Aux Task2 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            true_outputs2 = self.targets2
+            
+            # produce predictions and get layer features to save for visual inspection
+            preds2, layer_features2 = results_From_Network['auxTask2']
+            
+            
+            # compute loss and accuracy
+            correct_prediction2 = tf.equal(tf.argmax(preds2, 1), tf.cast(true_outputs2, tf.int64))
+            accuracy2 = tf.reduce_mean(tf.cast(correct_prediction2, tf.float32))
+            crossentropy_loss2 = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs2, logits=preds2))
+            
+            # add loss and accuracy to collections task1
+            tf.add_to_collection('crossentropy_losses2', crossentropy_loss2)
+            tf.add_to_collection('accuracy2', accuracy2)
+            #-----------------------------------------------------------------------------------------------
+            
+            #Aux Task3 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            true_outputs3 = self.targets3
+            
+            # produce predictions and get layer features to save for visual inspection
+            preds3, layer_features3 = results_From_Network['auxTask3']
+            
+            
+            # compute loss and accuracy
+            correct_prediction3 = tf.equal(tf.argmax(preds3, 1), tf.cast(true_outputs3, tf.int64))
+            accuracy3 = tf.reduce_mean(tf.cast(correct_prediction3, tf.float32))
+            crossentropy_loss3 = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_outputs3, logits=preds3))
+            
+            # add loss and accuracy to collections task1
+            tf.add_to_collection('crossentropy_losses3', crossentropy_loss3)
+            tf.add_to_collection('accuracy3', accuracy3)
+            #-----------------------------------------------------------------------------------------------
+            
         #Multi task---------------------------------------------------------------------------------
         
         return {"crossentropy_losses": tf.add_n(tf.get_collection('crossentropy_losses'),
@@ -112,7 +156,15 @@ class ClassifierNetworkGraph:
                 
                 "crossentropy_losses1": tf.add_n(tf.get_collection('crossentropy_losses1'),
                                                 name='total_classification_loss1'),
-                "accuracy1": tf.add_n(tf.get_collection('accuracy1'), name='total_accuracy1')              
+                "accuracy1": tf.add_n(tf.get_collection('accuracy1'), name='total_accuracy1'),      
+                
+               "crossentropy_losses2": tf.add_n(tf.get_collection('crossentropy_losses2'),
+                                                name='total_classification_loss2'),
+                "accuracy2": tf.add_n(tf.get_collection('accuracy2'), name='total_accuracy2'),
+                
+                "crossentropy_losses3": tf.add_n(tf.get_collection('crossentropy_losses3'),
+                                                name='total_classification_loss3'),
+                "accuracy3": tf.add_n(tf.get_collection('accuracy3'), name='total_accuracy3')       
                }
         #--------------------------------------------------------------------------------------------
 
@@ -207,10 +259,18 @@ class ClassifierNetworkGraph:
             #Aux Task1
             c_error_opt_op1 = c_opt.minimize(losses["crossentropy_losses1"], var_list=self.sharedNetwork.variables1,
                                             colocate_gradients_with_ops=True)
+            
+            #Aux Task2
+            c_error_opt_op2 = c_opt.minimize(losses["crossentropy_losses2"], var_list=self.sharedNetwork.variables2,
+                                            colocate_gradients_with_ops=True)
+            
+            #Aux Task3
+            c_error_opt_op3 = c_opt.minimize(losses["crossentropy_losses3"], var_list=self.sharedNetwork.variables3,
+                                            colocate_gradients_with_ops=True)
             #--------------------------------------------------------------------------------------------------------
             
         #Multi task---------------------------------
-        return (c_error_opt_op,c_error_opt_op1)
+        return (c_error_opt_op,c_error_opt_op1,c_error_opt_op2,c_error_opt_op3)
         #-------------------------------------------
     
     def init_train(self):
@@ -221,6 +281,6 @@ class ClassifierNetworkGraph:
         losses_ops = self.loss()
         
         #Mullti task--------------------------------------------------
-        (c_error_opt_op,c_error_opt_op1) = self.train(losses_ops)
-        return losses_ops, (c_error_opt_op,c_error_opt_op1)
+        (c_error_opt_op,c_error_opt_op1,c_error_opt_op2,c_error_opt_op3) = self.train(losses_ops)
+        return losses_ops, (c_error_opt_op,c_error_opt_op1,c_error_opt_op2,c_error_opt_op3)
         #-------------------------------------------------------------

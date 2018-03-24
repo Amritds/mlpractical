@@ -5,7 +5,7 @@ from tensorflow.python.ops.nn_ops import leaky_relu, relu
 from utils.network_summary import count_parameters
 
 class VGGClassifier:
-    def __init__(self, batch_size, layer_stage_sizes, name, aux1_name,num_classes, num_aux1_classes, num_channels=1, batch_norm_use=False,
+    def __init__(self, batch_size, layer_stage_sizes, name, aux1_name,num_classes, num_aux1_classes,num_aux2_classes,num_aux3_classes, num_channels=1, batch_norm_use=False,
                  inner_layer_depth=2, strided_dim_reduction=True):
 
         """
@@ -35,13 +35,21 @@ class VGGClassifier:
         #Main task
         self.name = name
 
-        #Aux task
+        #Aux task1
         self.aux1_name =aux1_name
+        
+        #Aux task2
+        self.aux2_name =aux2_name
+        
+        #Aux task3
+        self.aux3_name =aux3_name
         
         #-------------------------------------------------------
         
         self.num_classes = num_classes
         self.num_aux1_classes = num_aux1_classes
+        self.num_aux2_classes = num_aux2_classes
+        self.num_aux3_classes = num_aux3_classes
         
         self.batch_norm_use = batch_norm_use
         self.inner_layer_depth = inner_layer_depth
@@ -62,33 +70,42 @@ class VGGClassifier:
         
         with tf.variable_scope(self.name, reuse=self.reuse):
             with tf.variable_scope(self.aux1_name, reuse=self.reuse):
-                layer_features = []
-                with tf.variable_scope('VGGNet'):
-                    outputs = image_input
-                    for i in range(len(self.layer_stage_sizes)):
-                        with tf.variable_scope('conv_stage_{}'.format(i)):
+                with tf.variable_scope(self.aux2_name, reuse=self.reuse):
+                    with tf.variable_scope(self.aux3_name, reuse=self.reuse):
+                        layer_features = []
+                        with tf.variable_scope('VGGNet'):
+                            outputs = image_input
+                            for i in range(len(self.layer_stage_sizes)):
+                                with tf.variable_scope('conv_stage_{}'.format(i)):
                         
-                            for j in range(self.inner_layer_depth):
-                                with tf.variable_scope('conv_{}_{}'.format(i, j)):
-                                    if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
-                                        stride = 2
-                                    else:
-                                        stride = 1
-                                    outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
+                                    for j in range(self.inner_layer_depth):
+                                        with tf.variable_scope('conv_{}_{}'.format(i, j)):
+                                            if (j == self.inner_layer_depth-1) and self.strided_dim_reduction:
+                                                stride = 2
+                                            else:
+                                                stride = 1
+                                            outputs = tf.layers.conv2d(outputs, self.layer_stage_sizes[i], [3, 3],
                                                                strides=(stride, stride),
                                                                padding='SAME', activation=None)
-                                    outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
-                                    layer_features.append(outputs)
-                                    if self.batch_norm_use:
-                                        outputs = batch_norm(outputs, decay=0.99, scale=True,
+                                            outputs = leaky_relu(outputs, name="leaky_relu{}".format(i))
+                                            layer_features.append(outputs)
+                                            if self.batch_norm_use:
+                                                outputs = batch_norm(outputs, decay=0.99, scale=True,
                                                              center=True, is_training=training, renorm=False)
-                            if self.strided_dim_reduction==False:
-                                outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
+                                    if self.strided_dim_reduction==False:
+                                        outputs = tf.layers.max_pooling2d(outputs, pool_size=(2, 2), strides=2)
 
-                            outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
+                                    outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
                                                                               # apply dropout only at dimensionality
                                                                               # reducing steps, i.e. the last layer in
                                                                               # every group
+                                    if(i==0):
+                                        outputs1=outputs
+                                    if(i==1):
+                                        outputs2=outputs
+                                    if(i==2):
+                                        outputs3=outputs
+                                   
 
         with tf.variable_scope(self.name, reuse=self.reuse):
             c_conv_encoder = outputs
@@ -96,9 +113,19 @@ class VGGClassifier:
             c_conv_encoder = tf.layers.dense(c_conv_encoder, units=self.num_classes)
             
         with tf.variable_scope(self.aux1_name, reuse=self.reuse):
-            c_conv_encoder1 = outputs
+            c_conv_encoder1 = outputs1
             c_conv_encoder1 = tf.contrib.layers.flatten(c_conv_encoder1)
-            c_conv_encoder1 = tf.layers.dense(c_conv_encoder, units=self.num_aux1_classes)
+            c_conv_encoder1 = tf.layers.dense(c_conv_encoder1, units=self.num_aux1_classes)
+            
+        with tf.variable_scope(self.aux2_name, reuse=self.reuse):
+            c_conv_encoder2 = outputs2
+            c_conv_encoder2 = tf.contrib.layers.flatten(c_conv_encoder2)
+            c_conv_encoder2 = tf.layers.dense(c_conv_encoder2, units=self.num_aux2_classes)
+            
+        with tf.variable_scope(self.aux3_name, reuse=self.reuse):
+            c_conv_encoder3 = outputs3
+            c_conv_encoder3 = tf.contrib.layers.flatten(c_conv_encoder3)
+            c_conv_encoder3 = tf.layers.dense(c_conv_encoder3, units=self.num_aux3_classes)
 
         self.reuse = True
         
@@ -107,8 +134,15 @@ class VGGClassifier:
         #Main task
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
 
-        #Aux task
+        #Aux task1
         self.variables1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.aux1_name)
+
+        #Aux task2
+        self.variables2 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.aux2_name)
+        
+        #Aux task3
+        self.variables3 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.aux3_name)
+        
         
         #----------------------------------------------------------------------------------------------
         
@@ -123,6 +157,12 @@ class VGGClassifier:
         
         #Aux Task1
         results_From_Network.update({'auxTask1':(c_conv_encoder1, layer_features)})
+        
+        #Aux Task2
+        results_From_Network.update({'auxTask1':(c_conv_encoder2, layer_features)})
+        
+        #Aux Task3
+        results_From_Network.update({'auxTask1':(c_conv_encoder3, layer_features)})
         
         #---------------------------------------------------
         
